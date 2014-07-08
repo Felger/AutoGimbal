@@ -40,6 +40,7 @@ namespace AutoGimbal
             print("Celestial Body count:" + body.Count);
             print("Vessel count:" + ship.Count);
             currentVess = FlightGlobals.fetch.activeVessel;
+            Debug.Log("[AutoGimbal] - Partmodule loaded");
         }
 
         //This override to the OnUpdate function runs on every physics frame, and updates all values and calculations we're interested in.
@@ -53,8 +54,18 @@ namespace AutoGimbal
             Vector3d t_pos = body[2].position;
             Quaternion q = currentVess.ReferenceTransform.rotation;
             Vector3d delta = (position - t_pos);
+            //Rotate vector into ship frame.  Unity does quaternion rotations implicitly.
+            Vector3d PV_ship = q * delta;
+            //Grab attachment rotation of the part, then rotate pointing vector into part frame.
+            Quaternion q_part = part.attRotation;
+            Vector3d PV_part = q_part * PV_ship;
+
+            //With the pointing vector in the part frame, project the pointing vector onto the rotation plane of the part itself.  The rotation axis is available in the Robotics object Robotics.rotateAxis, just need to project onto the plane.
+            // believe the rotation value is relative
+
+
             
-            Target = body[2].GetName();
+
 
             TrackingState = manager.TrackingState;
             float Rotation_Target = manager.rotationTarget;
@@ -64,6 +75,7 @@ namespace AutoGimbal
             pos_Y = delta.y;
             pos_Z = delta.z;
         }
+
 
         //IR_Commander interfaces with Infernal Robotics to command motion to a specific point as specified on input.
         //      TrackingState is input from the GUI, commanded by user.
@@ -122,114 +134,5 @@ namespace AutoGimbal
             return MoveState;
         }//end IR_Commander
 
-    }
-
-    [KSPAddon(KSPAddon.Startup.EveryScene, false)]
-    public class AutoGimbalManager : MonoBehaviour
-    {
-        void Start()
-        {
-            FlightGlobals.Vessels.ForEach(vessel =>
-            {
-                vessel.FindPartModulesImplementing<AutoGimbal>().ForEach(gimbal =>
-                   { gimbal.manager = this; });
-            });
-            Debug.Log("[AutoGimbalManager] started");
-        }
-
-        //Make a GUI variable to define window position.
-        protected static Rect windowPosn;
-        private string rotationTargetString = "0.0";
-        public float rotationTarget;
-        private bool shipsToggle;
-        private bool bodiesToggle;
-        private bool guiEnabled = false;
-        //TrackingState stores the current state of the gimbal commanding.
-        //      0 = not tracking
-        //      1 = tracking
-        public int TrackingState;
-        IButton AutoGimbalButton;
-
-        void Awake()
-        {
-            Debug.Log("[AutoGimbalManager] awake");
-            guiEnabled = false;
-            var scene = HighLogic.LoadedScene;
-            if (scene == GameScenes.FLIGHT)
-            {//Need to check at some point if we need to reload groups from vessel
-            }
-            if (ToolbarManager.ToolbarAvailable)
-            {
-                AutoGimbalButton = ToolbarManager.Instance.add("Felger", "AutoGimbalButton");
-                AutoGimbalButton.TexturePath = "AutoGimbal/Textures/icon_button";
-                AutoGimbalButton.ToolTip = "AutoGimbal Manager";
-                AutoGimbalButton.Visibility = new GameScenesVisibility(GameScenes.EDITOR, GameScenes.SPH, GameScenes.FLIGHT);
-                AutoGimbalButton.OnClick += (e) => guiEnabled = !guiEnabled;
-                AutoGimbalButton.Visible = true;
-            }
-            else
-            {
-                guiEnabled = true;
-            }
-        }
-
-
-        //Create the OnDraw function called above into the rendering queue.  This will create the GUI and collect actions input to the GUI.
-        void OnGUI()
-        {
-            //Define the default window position, if no changes have been made:
-            if(windowPosn.x == 0 && windowPosn.y == 0)
-            {
-                windowPosn = new Rect(Screen.width - 300, 50, 10, 10);
-            }
-            var scene = HighLogic.LoadedScene;
-            if (scene == GameScenes.FLIGHT)
-            {
-                //Creates a new box, specifying the position to follow the defined position above.
-                if (guiEnabled)
-                {
-                    windowPosn = GUILayout.Window(0, windowPosn, WindowMaker, "AutoGimbal");
-                }
-            }
-        }
-        protected void WindowMaker(int windowID)
-        {
-            GUILayout.BeginVertical();
-            GUILayout.Label("Target Angle:");
-
-            rotationTargetString = GUILayout.TextField(rotationTargetString);
-            GUILayout.BeginHorizontal();
-
-            if (GUILayout.Button("Start"))
-            {
-                rotationTarget = float.Parse(rotationTargetString);
-                TrackingState = 1;
-            }
-            if(GUILayout.Button("Stop"))
-            {
-                TrackingState = 0;
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            shipsToggle = GUILayout.Toggle(shipsToggle,"Ships","Button");
-            bodiesToggle = GUILayout.Toggle(bodiesToggle, "Bodies","Button");
-            GUILayout.EndHorizontal();
-            if (ToolbarManager.ToolbarAvailable)
-            {
-                if (GUILayout.Button("Close"))
-                {
-                    guiEnabled = false;
-                }
-            }
-            GUILayout.EndVertical();
-            GUI.DragWindow();   //Make the GUI draggable
-        }
-    void OnDestroy()
-    {
-        if (ToolbarManager.ToolbarAvailable)
-        {
-            AutoGimbalButton.Destroy();
-        }
-    }
     }
 }

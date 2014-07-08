@@ -25,3 +25,4 @@ D:\Code\Visual Studio 2013\Projects\AutoGimbal\Source\AutoGimbal\bin\Debug\Unity
 D:\Code\Visual Studio 2013\Projects\AutoGimbal\Source\AutoGimbal\obj\Debug\AutoGimbal.csprojResolveAssemblyReference.cache
 D:\Code\Visual Studio 2013\Projects\AutoGimbal\Source\AutoGimbal\obj\Debug\AutoGimbal.dll
 D:\Code\Visual Studio 2013\Projects\AutoGimbal\Source\AutoGimbal\obj\Debug\AutoGimbal.pdb
+D:\Code\Visual Studio 2013\Projects\AutoGimbal\AutoGimbal\bin\Debug\Toolbar.dll
